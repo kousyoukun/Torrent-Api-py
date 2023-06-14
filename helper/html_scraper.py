@@ -10,11 +10,16 @@ class Scraper:
             async with session.get(
                 url,
                 headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36"
+                    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+                    "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                    "accept-encoding": "gzip, deflate",
+                    "cache-control": "max-age=0"
                 },
             ) as r:
-                return await r.text(encoding="ISO-8859-1")
-        except:
+                return await r.text(encoding="utf-8")
+        except Exception as e:
+            print(e)
             return None
 
     async def get_all_results(self, session, url):

@@ -25,6 +25,7 @@ class x1337:
                         ".no-top-radius > div > ul > li > a")['href']
                     uls = soup.find_all("ul", class_="list")[1]
                     lis = uls.find_all("li")[0]
+                    
                     imgs = [img['href'] for img in (soup.find("div", id="description")
                                                     ).find_all("a") if img['href'].endswith(
                         (".png", ".jpg", ".jpeg"))]
@@ -34,7 +35,15 @@ class x1337:
                         obj["screenshot"] = imgs
                     obj["category"] = lis.find("span").text
                     obj["files"] = files
+                    
                     try:
+                        imdb_url = soup.find_all(name='a', attrs={'href':re.compile('imdb')})[0].attrs['href']
+                        obj["imdb_url"] = imdb_url  
+                    except:
+                        pass
+
+                    try:
+                        
                         poster = soup.select_one(
                             "div.torrent-image img")["src"]
                         if str(poster).startswith("//"):
@@ -43,6 +52,7 @@ class x1337:
                             obj["poster"] = self.BASE_URL + poster
                     except:
                         pass
+                    
                     obj["magnet"] = magnet
 
                     obj["hash"] = re.search(
@@ -170,7 +180,7 @@ class x1337:
                 url = self.BASE_URL + "/trending"
             else:
                 url = self.BASE_URL + "/cat/{}/{}/".format(
-                    str(category).capitalize(), page
+                    self.transfer_category(category), page
                 )
             return await self.parser_result(start_time, url, session, page)
 
@@ -182,3 +192,11 @@ class x1337:
                 query, category.capitalize(), page
             )
             return await self.parser_result(start_time, url, session, page, query)
+
+    def transfer_category(self, category):
+        if category == 'tv':
+            return 'TV'
+        elif category == 'xxx':
+            return 'XXX'
+        else:
+            return str(category).capitalize()

@@ -13,19 +13,24 @@ class Yts:
     def __init__(self):
         self.BASE_URL = "https://yts.mx"
         self.LIMIT = None
+        self.COOKIES = {
+            'site_language': 'zh'
+        }
 
     @decorator_asyncio_fix
     async def _individual_scrap(self, session, url, obj):
         try:
             async with session.get(url) as res:
-                html = await res.text(encoding="ISO-8859-1")
+                html = await res.text(encoding="utf-8")
                 soup = BeautifulSoup(html, "lxml")
                 try:
                     name = soup.select_one("div.hidden-xs h1").text
                     div = soup.select("div.hidden-xs h2")
-                    date = div[0].text
-                    genre = div[1].text.split("/")
+                    en_name = div[0].text
+                    date = div[1].text
+                    genre = div[2].text.replace(' ', '').split("/")
                     rating = soup.select_one("[itemprop=ratingValue]").text
+                    imdb_url = soup.select_one("[itemprop=aggregateRating]").select_one('a').attrs['href']
                     poster = (
                         soup.find("div", id="movie-poster")
                         .find("img")["src"]
@@ -33,22 +38,19 @@ class Yts:
                     )
                     poster[-1] = poster[-1].replace("medium", "large")
                     poster = "/".join(poster)
-                    description = soup.select("div#synopsis .hidden-xs")[0].text.strip()
+                    description = soup.select("div#synopsis")[0].select("p")[0].text
                     runtime = (
-                        soup.select_one(".tech-spec-info")
-                        .find_all("div", class_="row")[-1]
-                        .find_all("div")[-3]
-                        .text.strip()
+                        soup.select_one(".tech-spec-info").find_all("span", class_="icon-clock")[0].parent.text.strip()
                     )
-                    screenshots = soup.find_all("a", class_="screenshot-group")
-                    screenshots = [a["href"] for a in screenshots]
+                    # screenshots = soup.find_all("a", class_="screenshot-group")
+                    # screenshots = [a["href"] for a in screenshots]
                     torrents = []
                     for div in soup.find_all("div", class_="modal-torrent"):
                         quality = (
                             div.find("div", class_="modal-quality").find("span").text
                         )
                         all_p = div.find_all("p", class_="quality-size")
-                        quality_type = all_p[0].text
+                        quality_type = all_p[0].text.strip()
                         size = all_p[1].text
                         torrent_link = div.find("a", class_="download-torrent")["href"]
                         magnet = div.find("a", class_="magnet-download")["href"]
@@ -64,15 +66,18 @@ class Yts:
                             }
                         )
                     obj["name"] = name
+                    obj["en_name"] = en_name
                     obj["date"] = date
                     obj["genre"] = genre
                     obj["rating"] = rating
                     obj["poster"] = poster
                     obj["description"] = description
                     obj["runtime"] = runtime
-                    obj["screenshot"] = screenshots
+                    obj["imdb_url"] = imdb_url
+                    # obj["screenshot"] = screenshots
                     obj["torrents"] = torrents
-                except:
+                except Exception as e:
+                    print(e)
                     pass
         except:
             return None
@@ -122,11 +127,13 @@ class Yts:
                 except:
                     pass
                 return my_dict, list_of_urls
-        except:
+        except Exception as e:
+            print(e)
             return None, None
 
     async def search(self, query, page, limit):
-        async with aiohttp.ClientSession() as session:
+        
+        async with aiohttp.ClientSession(cookies=self.COOKIES) as session:
             start_time = time.time()
             self.LIMIT = limit
             if page != 1:
@@ -140,6 +147,7 @@ class Yts:
                 url = self.BASE_URL + "/browse-movies/{}/all/all/0/latest/0/all".format(
                     query
                 )
+            
             return await self.parser_result(start_time, url, session)
 
     async def parser_result(self, start_time, url, session):
@@ -153,14 +161,14 @@ class Yts:
         return result
 
     async def trending(self, category, page, limit):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(cookies=self.COOKIES) as session:
             start_time = time.time()
             self.LIMIT = limit
             url = self.BASE_URL + "/trending-movies"
             return await self.parser_result(start_time, url, session)
 
     async def recent(self, category, page, limit):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(cookies=self.COOKIES) as session:
             start_time = time.time()
             self.LIMIT = limit
             url = self.BASE_URL + "/browse-movies/0/all/all/0/featured/0/all"
