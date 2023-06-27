@@ -25,25 +25,26 @@ class x1337:
                         ".no-top-radius > div > ul > li > a")['href']
                     uls = soup.find_all("ul", class_="list")[1]
                     lis = uls.find_all("li")[0]
-                    
+
                     imgs = [img['href'] for img in (soup.find("div", id="description")
                                                     ).find_all("a") if img['href'].endswith(
                         (".png", ".jpg", ".jpeg"))]
+
                     files = [f.text for f in soup.find(
                         "div", id="files").find_all("li")]
                     if len(imgs) > 0:
                         obj["screenshot"] = imgs
                     obj["category"] = lis.find("span").text
                     obj["files"] = files
-                    
+
                     try:
-                        imdb_url = soup.find_all(name='a', attrs={'href':re.compile('imdb')})[0].attrs['href']
-                        obj["imdb_url"] = imdb_url  
+                        imdb_url = soup.find_all(name='a', attrs={'href': re.compile('imdb')})[0].attrs['href']
+                        obj["imdb_url"] = imdb_url
                     except:
                         pass
 
                     try:
-                        
+
                         poster = soup.select_one(
                             "div.torrent-image img")["src"]
                         if str(poster).startswith("//"):
@@ -52,7 +53,7 @@ class x1337:
                             obj["poster"] = self.BASE_URL + poster
                     except:
                         pass
-                    
+
                     obj["magnet"] = magnet
 
                     obj["hash"] = re.search(

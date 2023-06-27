@@ -26,9 +26,16 @@ class Yts:
                 try:
                     name = soup.select_one("div.hidden-xs h1").text
                     div = soup.select("div.hidden-xs h2")
-                    en_name = div[0].text
-                    date = div[1].text
-                    genre = div[2].text.replace(' ', '').split("/")
+                    if len(div) == 3:
+                        en_name = div[0].text
+                        date = div[1].text
+                        genre = div[2].text.replace(' ', '').split("/")
+                        is_chinese = True
+                    elif len(div) == 2:
+                        en_name = name
+                        date = div[0].text
+                        genre = div[1].text.replace(' ', '').split("/")
+                        is_chinese = False
                     rating = soup.select_one("[itemprop=ratingValue]").text
                     imdb_url = soup.select_one("[itemprop=aggregateRating]").select_one('a').attrs['href']
                     poster = (
@@ -42,6 +49,7 @@ class Yts:
                     runtime = (
                         soup.select_one(".tech-spec-info").find_all("span", class_="icon-clock")[0].parent.text.strip()
                     )
+                    dateCreated = soup.select_one("[itemprop=dateCreated]").text
                     # screenshots = soup.find_all("a", class_="screenshot-group")
                     # screenshots = [a["href"] for a in screenshots]
                     torrents = []
@@ -76,6 +84,8 @@ class Yts:
                     obj["imdb_url"] = imdb_url
                     # obj["screenshot"] = screenshots
                     obj["torrents"] = torrents
+                    obj["is_chinese"] = is_chinese
+                    obj["create_date"] = dateCreated
                 except Exception as e:
                     print(e)
                     pass
@@ -171,5 +181,5 @@ class Yts:
         async with aiohttp.ClientSession(cookies=self.COOKIES) as session:
             start_time = time.time()
             self.LIMIT = limit
-            url = self.BASE_URL + "/browse-movies/0/all/all/0/featured/0/all"
+            url = self.BASE_URL + f"/browse-movies?page={page}"
             return await self.parser_result(start_time, url, session)
